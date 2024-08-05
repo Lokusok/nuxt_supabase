@@ -37,7 +37,7 @@
           />
         </button>
 
-        <button @click="userStore.isMenuOverlay = true" class="w-full h-full">
+        <button @click="userStore.isLogoutOverlay = true" class="w-full h-full">
           <Icon
             class="mb-1"
             name="ph:sign-out"
