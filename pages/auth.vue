@@ -9,6 +9,7 @@
       <div class="max-w-[350px] mx-auto px-2 text-white">
         <div class="text-center mb-6 mt-4">Login / Register</div>
         <button
+          @click="callbacks.login('github')"
           class="flex items-center justify-center gap-3 p-1.5 w-full border rounded-full text-lg font-semibold"
         >
           <div class="flex items-center gap-2 justify-center">
@@ -21,23 +22,23 @@
 </template>
 
 <script setup>
-// const client = useSupabaseClient();
-// const user = useSupabaseUser();
+const client = useSupabaseClient();
+const user = useSupabaseUser();
 
-// watchEffect(() => {
-//   if (user.value) {
-//     navigateTo('/');
-//   }
-// });
+watchEffect(() => {
+  if (user.value) {
+    navigateTo('/');
+  }
+});
 
-// const callbacks = {
-//   login: async (prov) => {
-//     const { data, error } = await client.auth.signInWithOAuth({
-//       provider: prov,
-//       redirectTo: window.location.origin,
-//     });
+const callbacks = {
+  login: async (provider) => {
+    const { data, error } = await client.auth.signInWithOAuth({
+      provider,
+      redirectTo: window.location.origin,
+    });
 
-//     if (error) console.error(error);
-//   },
-// };
+    if (error) console.error(error);
+  },
+};
 </script>

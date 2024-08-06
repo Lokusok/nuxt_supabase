@@ -15,4 +15,7 @@ export default defineNuxtConfig({
       bucketUrl: process.env.BUCKET_URL,
     },
   },
+  supabase: {
+    redirect: false,
+  },
 });

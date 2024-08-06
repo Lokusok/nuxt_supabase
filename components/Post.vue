@@ -13,7 +13,11 @@
           </div>
         </div>
 
-        <div @click="isMenu = !isMenu" class="relative">
+        <div
+          v-if="user?.identities?.[0]?.user_id === props.post.userId"
+          @click="isMenu = !isMenu"
+          class="relative"
+        >
           <button
             :disabled="isDeleting"
             class="flex items-center text-white p-1 h-[24px] w-[24px] hover:bg-gray-800 rounded-full cursor-pointer"
@@ -59,7 +63,7 @@
           <img
             v-if="post && post.picture"
             class="mx-auto w-full mt-2 pr-2 rounded"
-            :src="post.picture"
+            :src="runtimeConfig.public.bucket_url + post.picture"
           />
           <div class="absolute mt-2 w-full ml-2">
             <button :disabled="isLike" class="flex items-center gap-1">
@@ -128,6 +132,6 @@ const isMenu = ref(false);
 const isLike = ref(false);
 const isDeleting = ref(false);
 
-// const client = useSupabaseClient();
-// const user = useSupabaseUser();
+const client = useSupabaseClient();
+const user = useSupabaseUser();
 </script>

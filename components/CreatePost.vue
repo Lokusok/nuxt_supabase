@@ -20,12 +20,14 @@
       >
         <div class="py-2 w-full">
           <div class="flex items-center">
-            <div class="flx items-center text-white">
+            <div v-if="user" class="flex items-center text-white">
               <img
                 class="rounded-full h-[35px]"
-                src="https://picsum.photos/id/223/50"
+                :src="user.identities[0].identity_data.avatar_url"
               />
-              <div class="ml-2 font-semibold text-[10px]">John Weeks Dev</div>
+              <div class="ml-2 font-semibold text-[16px]">
+                {{ user.identities[0].identity_data.full_name }}
+              </div>
             </div>
           </div>
 
@@ -104,8 +106,8 @@ import { v4 as uuid4 } from 'uuid';
 
 import { useUserStore } from '~/stores/user';
 
-// const client = useSupabaseClient();
-// const user = useSupabaseUser();
+const client = useSupabaseClient();
+const user = useSupabaseUser();
 
 const userStore = useUserStore();
 

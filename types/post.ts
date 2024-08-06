@@ -4,4 +4,5 @@ export interface IPost {
   text: string;
   picture: string;
   title: string;
+  userId: string;
 }

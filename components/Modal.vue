@@ -14,7 +14,10 @@
         <Icon name="mdi:close" size="25" />
       </button>
       <div class="border-b border-b-gray-700 my-1"></div>
-      <button class="flex items-center justify-between bg-black w-full p-3">
+      <button
+        @click="callbacks.logoutAndCloseModal"
+        class="flex items-center justify-between bg-black w-full p-3"
+      >
         <div>Log Out</div>
         <Icon name="ph:sign-out" size="25" />
       </button>
@@ -27,11 +30,11 @@ import { useUserStore } from '~/stores/user';
 
 const userStore = useUserStore();
 
-// const client = useSupabaseClient();
+const client = useSupabaseClient();
 
 const callbacks = {
-  closeModal: async () => {
-    // client.auth.signOut();
+  logoutAndCloseModal: async () => {
+    client.auth.signOut();
     userStore.isLogoutOverlay = false;
     return navigateTo('/');
   },

@@ -7,6 +7,38 @@
             <Post :post="post" @isDeleted="posts = []" />
           </div>
         </template>
+
+        <div v-else>
+          <ClientOnly>
+            <div
+              v-if="isLoading"
+              class="mt-20 w-full flex items-center justify-center mx-auto"
+            >
+              <div
+                class="text-white mx-auto flex flex-col items-center justify-center"
+              >
+                <Icon
+                  name="eos-icons:bubble-loading"
+                  size="50"
+                  style="color: white"
+                />
+                <div class="w-full mt-1">Loading...</div>
+              </div>
+            </div>
+
+            <div
+              v-else
+              class="mt-20 w-full flex items-center justify-center mx-auto"
+            >
+              <div
+                class="text-white mx-auto flex flex-col items-center justify-center"
+              >
+                <Icon name="tabler:mood-empty" size="50" style="color: white" />
+                <div class="w-full">Make the first post!</div>
+              </div>
+            </div>
+          </ClientOnly>
+        </div>
       </div>
     </div>
   </div>
@@ -20,20 +52,45 @@ definePageMeta({
 });
 
 const userStore = useUserStore();
-// const user = useSupabaseUser();
+const user = useSupabaseUser();
+
+watchEffect(() => {
+  if (!user.value) {
+    return navigateTo('/auth');
+  }
+});
 
 const posts = ref([]);
-const isPosts = ref(true);
+const isPosts = ref(false);
 const isLoading = ref(false);
 
-onBeforeMount(() => {
-  posts.value = [
-    {
-      name: 'John Weeks Dev',
-      image: 'https://placehold.co/100',
-      text: 'This is the title',
-      picture: 'https://placehold.co/500',
-    },
-  ];
+onBeforeMount(async () => {
+  try {
+    isLoading.value = true;
+    await userStore.getAllPosts();
+  } catch (error) {
+    console.log(error);
+  } finally {
+    isLoading.value = false;
+  }
 });
+
+watchEffect(() => {
+  if (!userStore.posts?.length) return;
+
+  posts.value = userStore.posts;
+  isPosts.value = true;
+});
+
+// For PWA issues
+watch(
+  () => posts.value,
+  () => {
+    if (!userStore.posts?.length) return;
+
+    posts.value = userStore.posts;
+    isPosts.value = true;
+  },
+  { deep: true },
+);
 </script>
