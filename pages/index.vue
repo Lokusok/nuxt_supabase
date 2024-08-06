@@ -1,10 +1,10 @@
 <template>
   <div id="IndexPage" class="w-full overflow-auto">
     <div class="mx-auto max-w-[500px] overflow-hidden">
-      <div id="Posts" class="px-4 max-w-[600px] mx-auto">
+      <div id="Posts" class="px-4 max-w-[600px] mx-auto mb-[250px]">
         <template v-if="isPosts">
           <div v-for="post in posts" :key="post" class="text-white">
-            <Post :post="post" @isDeleted="posts = []" />
+            <Post :post="post" @isDeleted="callbacks.fetchPosts" />
           </div>
         </template>
 
@@ -54,11 +54,14 @@ definePageMeta({
 const userStore = useUserStore();
 const user = useSupabaseUser();
 
-watchEffect(() => {
-  if (!user.value) {
-    return navigateTo('/auth');
-  }
-});
+watch(
+  () => user.value,
+  () => {
+    if (!user.value) {
+      return navigateTo('/auth');
+    }
+  },
+);
 
 const posts = ref([]);
 const isPosts = ref(false);
@@ -76,7 +79,10 @@ onBeforeMount(async () => {
 });
 
 watchEffect(() => {
-  if (!userStore.posts?.length) return;
+  if (!userStore.posts?.length) {
+    isPosts.value = false;
+    return;
+  }
 
   posts.value = userStore.posts;
   isPosts.value = true;
@@ -86,11 +92,20 @@ watchEffect(() => {
 watch(
   () => posts.value,
   () => {
-    if (!userStore.posts?.length) return;
+    if (!userStore.posts?.length) {
+      isPosts.value = false;
+      return;
+    }
 
     posts.value = userStore.posts;
     isPosts.value = true;
   },
   { deep: true },
 );
+
+const callbacks = {
+  fetchPosts: () => {
+    userStore.getAllPosts();
+  },
+};
 </script>

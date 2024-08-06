@@ -88,6 +88,7 @@
       <button
         v-if="text"
         :disabled="isLoading"
+        @click="callbacks.createPost"
         class="z-[500] fixed bottom-0 font-bold text-lg w-full p-2 bg-black inline-block float-right p-4 border-t border-t-gray-700"
         :class="isLoading ? 'text-gray-600' : 'text-blue-600'"
       >
@@ -102,7 +103,7 @@
 </template>
 
 <script setup lang="ts">
-import { v4 as uuid4 } from 'uuid';
+import { v4 as uuidv4 } from 'uuid';
 
 import { useUserStore } from '~/stores/user';
 
@@ -159,6 +160,55 @@ const callbacks = {
   closeOverlay: () => {
     userStore.isMenuOverlay = false;
     callbacks.clearData();
+  },
+
+  createPost: async () => {
+    let dataOut = null;
+    let errorOut = null;
+    let picture = '';
+
+    isLoading.value = true;
+
+    // Был загружен файл - грузим в storage supabase
+    if (fileData.value) {
+      const { data, error } = await client.storage
+        .from('nuxt_pet_files')
+        .upload(`${uuidv4()}.jpg`, fileData.value);
+
+      dataOut = data;
+      errorOut = error;
+    }
+
+    if (errorOut) {
+      console.log(errorOut);
+      return errorOut;
+    }
+
+    if (dataOut) {
+      picture = dataOut.path ?? '';
+    }
+
+    try {
+      await useFetch('/api/create-post', {
+        method: 'POST',
+        body: {
+          userId: user.value.identities[0].user_id,
+          name: user.value.identities[0].identity_data.full_name || 'Post',
+          image: user.value.identities[0].identity_data.avatar_url,
+          text: text.value,
+          picture: picture,
+        },
+      });
+
+      await userStore.getAllPosts();
+      userStore.isMenuOverlay = false;
+
+      callbacks.clearData();
+    } catch (error) {
+      console.log(error);
+    } finally {
+      isLoading.value = false;
+    }
   },
 };
 </script>

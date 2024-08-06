@@ -42,6 +42,7 @@
             class="absolute border border-gray-600 right-0 z-20 mt-1 rounded"
           >
             <button
+              @click="callbacks.deletePost(post.id, post.picture)"
               class="flex items-center rounded gap-2 text-red-500 justify-between bg-black w-full pl-4 pr-3 py-1 hover:bg-gray-900"
             >
               <div>Delete</div>
@@ -63,20 +64,38 @@
           <img
             v-if="post && post.picture"
             class="mx-auto w-full mt-2 pr-2 rounded"
-            :src="runtimeConfig.public.bucket_url + post.picture"
+            :src="runtimeConfig.public.bucketUrl + post.picture"
           />
           <div class="absolute mt-2 w-full ml-2">
-            <button :disabled="isLike" class="flex items-center gap-1">
+            <button
+              @click="callbacks.likesFunc"
+              :disabled="isLike"
+              class="flex items-center gap-1"
+            >
               <Icon
+                v-if="!hasLiked"
                 class="p-1 text-white hover:bg-gray-800 rounded-full cursor-pointer"
                 name="mdi:cards-heart-outline"
+                size="28"
+              />
+              <Icon
+                v-else
+                class="p-1 text-red-500 hover:bg-gray-800 rounded-full cursor-pointer"
+                name="mdi:cards-heart"
                 size="28"
               />
             </button>
 
             <div class="relative text-sm text-gray-500">
               <div>
-                <span>4</span>
+                <span v-if="!isLike">{{ props.post.likes.length }}</span>
+                <span v-else>
+                  <Icon
+                    name="eos-icons:bubble-loading"
+                    style="color: white"
+                    size="13"
+                  />
+                </span>
                 likes
               </div>
             </div>
@@ -115,8 +134,10 @@
 
 <script setup lang="ts">
 import { useUserStore } from '~/stores/user';
+import type { ILike } from '~/types/like';
 
 import type { IPost } from '~/types/post';
+import { isLikeGuard } from '~/utils';
 
 const props = defineProps<{
   post: IPost;
@@ -132,6 +153,103 @@ const isMenu = ref(false);
 const isLike = ref(false);
 const isDeleting = ref(false);
 
+const hasLiked = computed(() => {
+  if (!user.value) return;
+
+  let result = false;
+
+  props.post.likes.forEach((like) => {
+    if (
+      like.userId === user.value.identities?.[0].user_id &&
+      like.postId === props.post.id
+    ) {
+      result = true;
+    }
+  });
+
+  return result;
+});
+
 const client = useSupabaseClient();
 const user = useSupabaseUser();
+
+const callbacks = {
+  deletePost: async (id: IPost['id'], picture: IPost['picture']) => {
+    const result = confirm('Are you sure you want to delete this post?');
+
+    if (!result) return;
+
+    try {
+      isMenu.value = false;
+      isDeleting.value = true;
+
+      const { data, error } = await client.storage
+        .from('nuxt_pet_files')
+        .remove(picture as unknown as string[]);
+
+      await useFetch(`/api/delete-post/${id}`, { method: 'DELETE' });
+      emit('isDeleted', true);
+    } catch (error) {
+      console.log(error);
+    } finally {
+      isDeleting.value = false;
+    }
+  },
+
+  likePost: async (id: IPost['id']) => {
+    isLike.value = true;
+
+    try {
+      await useFetch('/api/like-post', {
+        method: 'POST',
+        body: {
+          userId: user.value.identities?.[0].user_id,
+          postId: id,
+        },
+      });
+
+      await userStore.getAllPosts();
+    } catch (error) {
+      console.log(error);
+    } finally {
+      isLike.value = false;
+    }
+  },
+
+  unlikePost: async (id: IPost['id']) => {
+    isLike.value = true;
+
+    try {
+      await useFetch(`/api/unlike-post/${id}`, { method: 'DELETE' });
+      await userStore.getAllPosts();
+    } catch (error) {
+      console.log(error);
+    } finally {
+      isLike.value = false;
+    }
+  },
+
+  likesFunc: () => {
+    let likePostObj: ILike | unknown = null;
+
+    if (props.post.likes.length < 1) {
+      callbacks.likePost(props.post.id);
+      return;
+    } else {
+      props.post.likes.forEach((like) => {
+        if (
+          like.userId == user.value.identities?.[0].user_id &&
+          like.postId == props.post.id
+        ) {
+          likePostObj = like;
+        }
+      });
+    }
+
+    if (isLikeGuard(likePostObj)) {
+      callbacks.unlikePost(likePostObj.id);
+      return;
+    }
+  },
+};
 </script>
